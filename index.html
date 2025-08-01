@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento de Medicamentos de Mocka</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .table-container {
+      padding: 30px;
+      overflow-x: auto;
+    }
+
+    .medication-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .medication-table th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 15px;
+      font-weight: 600;
+      text-align: center;
+      font-size: 0.9rem;
+      border-bottom: 3px solid #5a67d8;
+    }
+
+    .medication-table td {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    .medication-table tr:hover td {
+      background: #f8fafc;
+      transform: scale(1.01);
+    }
+
+    .date-cell {
+      font-weight: 600;
+      color: #2d3748;
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%) !important;
+      border-right: 3px solid #cbd5e0;
+    }
+
+    .time-cell {
+      font-weight: 500;
+      color: #4a5568;
+      background: #f7fafc !important;
+      border-right: 2px solid #e2e8f0;
+    }
+
+    .medication-cell {
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .medication-cell.completed {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+      color: white;
+      font-weight: 600;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .medication-cell.pending {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important;
+      color: white;
+      font-weight: 600;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .medication-cell.empty {
+      background: #f7fafc !important;
+      color: #a0aec0;
+    }
+
+    .medication-cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      position: relative;
+    }
+
+    .checkbox-icon {
+      font-size: 1.2rem;
+      margin-right: 5px;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .legend-completed {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+    }
+
+    .legend-pending {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+      color: white;
+    }
+
+    .legend-empty {
+      background: #f7fafc;
+      color: #a0aec0;
+      border: 2px solid #e2e8f0;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 30px 0;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      color: #718096;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-completed .stat-number {
+      color: #38a169;
+    }
+
+    .stat-pending .stat-number {
+      color: #e53e3e;
+    }
+
+    .stat-total .stat-number {
+      color: #667eea;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .table-container {
+        padding: 15px;
+      }
+
+      .medication-table th,
+      .medication-table td {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+      }
+
+      .legend {
+        gap: 15px;
+      }
+
+      .legend-item {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .pulse-animation {
+      animation: pulse 0.3s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💊 Control de Medicamentos de Mocka 😺</h1>
+      <p>Haz clic en cada medicamento para marcar como completado o pendiente</p>
+    </div>
+
+    <div class="table-container">
+      <div class="stats">
+        <div class="stat-card stat-completed">
+          <div class="stat-number" id="completedCount">0</div>
+          <div class="stat-label">Completados</div>
+        </div>
+        <div class="stat-card stat-pending">
+          <div class="stat-number" id="pendingCount">0</div>
+          <div class="stat-label">Pendientes</div>
+        </div>
+        <div class="stat-card stat-total">
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item legend-completed">
+          <span class="checkbox-icon">✅</span>
+          <span>Completado</span>
+        </div>
+        <div class="legend-item legend-pending">
+          <span class="checkbox-icon">❌</span>
+          <span>Pendiente</span>
+        </div>
+        <div class="legend-item legend-empty">
+          <span class="checkbox-icon">⚪</span>
+          <span>No programado</span>
+        </div>
+      </div>
+
+      <table class="medication-table" id="medicationTable">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>NEFROTEC DS<br><small>(½ tab) 12H</small></th>
+            <th>RENALOF SUSPENSIÓN<br><small>(1.1 ml) 12H</small></th>
+            <th>ENGYSTOL-UBICHINON<br><small>(3 gotas) 8H</small></th>
+            <th>INTERFERON OMEGA<br><small>(0.7 ml) 24H</small></th>
+            <th>LIV 52<br><small>(2 ml) 12H</small></th>
+            <th>DOXICICLINA<br><small>(1 tab) 24H</small></th>
+            <th>FORTIFLORA<br><small>(1 sobre) 24H</small></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Datos de medicamentos desde el archivo
+    const medicationData = [
+      ['2025-08-01', '07:00', '☐', 'ok', '☐', '☐', '☐', 'OK', ''],
+      ['2025-08-01', '11:00', '', '', '', '', '', '', ''],
+      ['2025-08-01', '15:00', '', '', '☐', '', '', '', ''],
+      ['2025-08-01', '19:00', '☐', '☐', '', '', '☐', '', 'OK'],
+      ['2025-08-01', '23:00', '', '', '☐', '', '', '', '']
+    ];
+
+    // Generar todos los datos para el mes
+    function generateMonthData() {
+      const allData = [];
+      for (let day = 1; day <= 30; day++) {
+        const date = `2025-08-${day.toString().padStart(2, '0')}`;
+        const times = ['07:00', '11:00', '15:00', '19:00', '23:00'];
+
+        times.forEach(time => {
+          if (time === '07:00') {
+            if (day <= 5) {
+              allData.push([date, time, '☐', '☐', '☐', '☐', '☐', '☐', '']);
+            } else {
+              allData.push([date, time, '☐', '☐', '☐', '', '☐', '☐', '']);
+            }
+          } else if (time === '11:00') {
+            allData.push([date, time, '', '', '', '', '', '', '']);
+          } else if (time === '15:00') {
+            allData.push([date, time, '', '', '☐', '', '', '', '']);
+          } else if (time === '19:00') {
+            allData.push([date, time, '☐', '☐', '', '', '☐', '', '☐']);
+          } else if (time === '23:00') {
+            allData.push([date, time, '', '', '☐', '', '', '', '']);
+          }
+        });
+      }
+      return allData;
+    }
+
+    const allMedicationData = generateMonthData();
+
+    // Estado de cada celda (completed, pending, empty)
+    let cellStates = {};
+
+    function initializeCellStates() {
+      allMedicationData.forEach((row, rowIndex) => {
+        for (let colIndex = 2; colIndex < row.length; colIndex++) {
+          const cellKey = `${rowIndex}-${colIndex}`;
+          const cellValue = row[colIndex];
+
+          if (cellValue === 'ok' || cellValue === 'OK') {
+            cellStates[cellKey] = 'completed';
+          } else if (cellValue === '☐') {
+            cellStates[cellKey] = 'pending';
+          } else {
+            cellStates[cellKey] = 'empty';
+          }
+        }
+      });
+    }
+
+    function toggleCellState(rowIndex, colIndex) {
+      const cellKey = `${rowIndex}-${colIndex}`;
+      const currentState = cellStates[cellKey];
+
+      if (currentState === 'empty') return; // No se puede cambiar celdas vacías
+
+      // Alternar entre completado y pendiente
+      cellStates[cellKey] = currentState === 'completed' ? 'pending' : 'completed';
+
+      updateCellDisplay(rowIndex, colIndex);
+      updateStats();
+    }
+
+    function updateCellDisplay(rowIndex, colIndex) {
+      const cell = document.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+      const cellKey = `${rowIndex}-${colIndex}`;
+      const state = cellStates[cellKey];
+
+      // Remover clases anteriores
+      cell.classList.remove('completed', 'pending', 'empty');
+
+      // Agregar nueva clase y contenido
+      cell.classList.add(state);
+      cell.classList.add('pulse-animation');
+
+      if (state === 'completed') {
+        cell.innerHTML = '<span class="checkbox-icon">✅</span>Completado';
+      } else if (state === 'pending') {
+        cell.innerHTML = '<span class="checkbox-icon">❌</span>Pendiente';
+      } else {
+        cell.innerHTML = '';
+      }
+
+      // Remover animación después de completarse
+      setTimeout(() => {
+        cell.classList.remove('pulse-animation');
+      }, 300);
+    }
+
+    function updateStats() {
+      let completed = 0;
+      let pending = 0;
+      let total = 0;
+
+      Object.values(cellStates).forEach(state => {
+        if (state === 'completed') completed++;
+        else if (state === 'pending') pending++;
+        if (state !== 'empty') total++;
+      });
+
+      document.getElementById('completedCount').textContent = completed;
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('totalCount').textContent = total;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      allMedicationData.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+
+        // Fecha
+        const dateCell = document.createElement('td');
+        dateCell.className = 'date-cell';
+        dateCell.textContent = row[0];
+        tr.appendChild(dateCell);
+
+        // Hora
+        const timeCell = document.createElement('td');
+        timeCell.className = 'time-cell';
+        timeCell.textContent = row[1];
+        tr.appendChild(timeCell);
+
+        // Medicamentos
+        for (let colIndex = 2; colIndex < row.length; colIndex++) {
+          const cell = document.createElement('td');
+          cell.className = 'medication-cell';
+          cell.setAttribute('data-row', rowIndex);
+          cell.setAttribute('data-col', colIndex);
+
+          const cellKey = `${rowIndex}-${colIndex}`;
+          const state = cellStates[cellKey];
+
+          cell.classList.add(state);
+
+          if (state === 'completed') {
+            cell.innerHTML = '<span class="checkbox-icon">✅</span>Completado';
+          } else if (state === 'pending') {
+            cell.innerHTML = '<span class="checkbox-icon">❌</span>Pendiente';
+          } else {
+            cell.innerHTML = '';
+          }
+
+          // Agregar evento de clic solo si no está vacío
+          if (state !== 'empty') {
+            cell.addEventListener('click', () => toggleCellState(rowIndex, colIndex));
+          }
+
+          tr.appendChild(cell);
+        }
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Inicializar la aplicación
+    initializeCellStates();
+    renderTable();
+    updateStats();
+  </script>
+</body>
+
+</html>
