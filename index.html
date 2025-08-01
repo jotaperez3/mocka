@@ -365,7 +365,7 @@
     let isLoading = false;
 
     async function loadFromCloud() {
-      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === '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') {
+      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === 'TU_TOKEN_AQUI') {
         console.log('Usando almacenamiento local - configura GitHub para sincronizar');
         return loadSavedStates();
       }
@@ -393,7 +393,7 @@
     }
 
     async function saveToCloud() {
-      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === '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') {
+      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === 'TU_TOKEN_AQUI') {
         saveStates(); // Solo guardar localmente
         return;
       }
