@@ -382,6 +382,7 @@
 
     // Guardar en JSONBin
     async function saveToCloud() {
+      console.log('Guardado en la nube:', new Date().toLocaleTimeString());
       if (!JSONBIN_BIN_ID || JSONBIN_BIN_ID === 'TU_BIN_ID_AQUI') {
         saveStates();
         return;
