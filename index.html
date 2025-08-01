@@ -317,16 +317,11 @@
   </div>
 
   <script>
-    // Datos de medicamentos desde el archivo
-    const medicationData = [
-      ['2025-08-01', '07:00', '☐', 'ok', '☐', '☐', '☐', 'OK', ''],
-      ['2025-08-01', '11:00', '', '', '', '', '', '', ''],
-      ['2025-08-01', '15:00', '', '', '☐', '', '', '', ''],
-      ['2025-08-01', '19:00', '☐', '☐', '', '', '☐', '', 'OK'],
-      ['2025-08-01', '23:00', '', '', '☐', '', '', '', '']
-    ];
+    // Configuración JSONBin.io - Reemplaza con tus datos de jsonbin.io
+    const JSONBIN_BIN_ID = '688d1e9cae596e708fbf9af7';
+    const JSONBIN_API_KEY = '$2a$10$II1KV44LXy380vzwh4jkZ.SdevYvImpokefcJSgSsSPSjxOIr9YIS';
 
-    // Generar todos los datos para el mes
+    // Generar datos del mes
     function generateMonthData() {
       const allData = [];
       for (let day = 1; day <= 30; day++) {
@@ -355,76 +350,63 @@
     }
 
     const allMedicationData = generateMonthData();
-
-    // Configuración para GitHub Gist (reemplaza con tus datos)
-    const GITHUB_TOKEN = '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'; // Token personal de GitHub
-    const GIST_ID = '73274ef52458962d9c8d3ab998a385d3'; // ID del Gist que crearás
-
-    // Estado de cada celda
     let cellStates = {};
     let isLoading = false;
 
+    // Cargar desde JSONBin
     async function loadFromCloud() {
-      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === 'TU_TOKEN_AQUI') {
-        console.log('Usando almacenamiento local - configura GitHub para sincronizar');
+      if (!JSONBIN_BIN_ID || JSONBIN_BIN_ID === 'TU_BIN_ID_AQUI') {
         return loadSavedStates();
       }
 
       try {
         isLoading = true;
-        const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
           headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`
+            'X-Master-Key': JSONBIN_API_KEY
           }
         });
 
         if (response.ok) {
-          const gist = await response.json();
-          const content = gist.files['medication-data.json'].content;
-          return JSON.parse(content);
+          const data = await response.json();
+          return data.record || {};
         }
       } catch (error) {
-        console.error('Error cargando desde la nube:', error);
+        console.error('Error cargando:', error);
       } finally {
         isLoading = false;
       }
 
-      return loadSavedStates(); // Fallback a localStorage
+      return loadSavedStates();
     }
 
+    // Guardar en JSONBin
     async function saveToCloud() {
-      if (!GITHUB_TOKEN || !GIST_ID || GITHUB_TOKEN === 'TU_TOKEN_AQUI') {
-        saveStates(); // Solo guardar localmente
+      if (!JSONBIN_BIN_ID || JSONBIN_BIN_ID === 'TU_BIN_ID_AQUI') {
+        saveStates();
         return;
       }
 
-      if (isLoading) return; // Evitar conflictos durante carga
+      if (isLoading) return;
 
       try {
-        const data = {
-          files: {
-            'medication-data.json': {
-              content: JSON.stringify(cellStates, null, 2)
-            }
-          }
-        };
-
-        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          method: 'PATCH',
+        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+          method: 'PUT',
           headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Master-Key': JSONBIN_API_KEY
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(cellStates)
         });
 
-        saveStates(); // También guardar localmente como backup
+        saveStates();
       } catch (error) {
-        console.error('Error guardando en la nube:', error);
-        saveStates(); // Fallback a localStorage
+        console.error('Error guardando:', error);
+        saveStates();
       }
     }
 
+    // LocalStorage backup
     function loadSavedStates() {
       const savedStates = localStorage.getItem('medicationStates');
       return savedStates ? JSON.parse(savedStates) : {};
@@ -434,6 +416,7 @@
       localStorage.setItem('medicationStates', JSON.stringify(cellStates));
     }
 
+    // Inicializar estados
     async function initializeCellStates() {
       const savedStates = await loadFromCloud();
 
@@ -455,6 +438,7 @@
       });
     }
 
+    // Toggle estado
     function toggleCellState(rowIndex, colIndex) {
       const cellKey = `${rowIndex}-${colIndex}`;
       const currentState = cellStates[cellKey];
@@ -465,20 +449,17 @@
 
       updateCellDisplay(rowIndex, colIndex);
       updateStats();
-      saveToCloud(); // Guardar en la nube
+      saveToCloud();
     }
 
+    // Actualizar display
     function updateCellDisplay(rowIndex, colIndex) {
       const cell = document.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
       const cellKey = `${rowIndex}-${colIndex}`;
       const state = cellStates[cellKey];
 
-      // Remover clases anteriores
       cell.classList.remove('completed', 'pending', 'empty');
-
-      // Agregar nueva clase y contenido
-      cell.classList.add(state);
-      cell.classList.add('pulse-animation');
+      cell.classList.add(state, 'pulse-animation');
 
       if (state === 'completed') {
         cell.innerHTML = '<span class="checkbox-icon">✅</span>Completado';
@@ -488,12 +469,10 @@
         cell.innerHTML = '';
       }
 
-      // Remover animación después de completarse
-      setTimeout(() => {
-        cell.classList.remove('pulse-animation');
-      }, 300);
+      setTimeout(() => cell.classList.remove('pulse-animation'), 300);
     }
 
+    // Actualizar estadísticas
     function updateStats() {
       let completed = 0;
       let pending = 0;
@@ -510,6 +489,7 @@
       document.getElementById('totalCount').textContent = total;
     }
 
+    // Renderizar tabla
     function renderTable() {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
@@ -549,7 +529,6 @@
             cell.innerHTML = '';
           }
 
-          // Agregar evento de clic solo si no está vacío
           if (state !== 'empty') {
             cell.addEventListener('click', () => toggleCellState(rowIndex, colIndex));
           }
@@ -561,7 +540,7 @@
       });
     }
 
-    // Inicializar la aplicación
+    // Inicializar
     async function init() {
       await initializeCellStates();
       renderTable();
